@@ -1,0 +1,84 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
+
+android {
+    def globalConfiguration = rootProject.extensions.getByName("ext")
+
+    compileSdkVersion globalConfiguration.compiledSdkVersion
+
+    defaultConfig {
+        minSdkVersion globalConfiguration.minSdkVersion
+        targetSdkVersion globalConfiguration.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // used by Room, to test migrations
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [
+                        "room.schemaLocation": "$projectDir/schemas".toString(),
+                        "room.incremental":"true",
+                        "room.expandProjection":"true"
+                ]
+            }
+        }
+    }
+
+    // used by Room, to test migrations
+    sourceSets {
+        androidTest.assets.srcDirs +=
+                files("$projectDir/schemas".toString())
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        targetCompatibility = "8"
+        sourceCompatibility = "8"
+    }
+
+    configurations.all {
+        resolutionStrategy.force "com.google.code.findbugs:jsr305:1.3.9"
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation libs.kotlin
+
+    // RxKotlin
+    implementation libs.rxKotlin
+
+    // Room
+    kapt libs.roomCompiler
+    implementation libs.roomRuntime
+    implementation libs.roomRxJava
+    testImplementation libs.roomTesting
+
+    // OffsetDateTime backport
+    implementation libs.threetenabp
+
+    // Testing
+    testImplementation libs.junit
+    androidTestImplementation libs.testJunitExt
+    androidTestImplementation libs.testRunner
+    implementation libs.archCoreTesting
+
+    // Leak Canary
+    debugImplementation libs.leakCanary
+
+    implementation project(':util')
+}
+
+repositories {
+    mavenCentral()
+}

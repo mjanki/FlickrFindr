@@ -1,0 +1,61 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+    def globalConfiguration = rootProject.extensions.getByName("ext")
+
+    compileSdkVersion globalConfiguration.compiledSdkVersion
+
+    defaultConfig {
+        minSdkVersion globalConfiguration.minSdkVersion
+        targetSdkVersion globalConfiguration.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        targetCompatibility = "8"
+        sourceCompatibility = "8"
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation libs.kotlin
+    implementation libs.androidxAppCompat
+    implementation libs.constraintLayout
+
+    // RxKotlin & RxAndroid
+    implementation libs.rxKotlin
+    implementation libs.rxAndroid
+
+    // Retrofit
+    implementation libs.retrofit
+
+    // OffsetDateTime backport
+    implementation libs.threetenabp
+
+    // Testing
+    testImplementation libs.junit
+    androidTestImplementation libs.testRunner
+    androidTestImplementation libs.testRules
+    androidTestImplementation libs.testJunitExt
+
+    // Leak Canary
+    debugImplementation libs.leakCanary
+}
+
+repositories {
+    mavenCentral()
+}
