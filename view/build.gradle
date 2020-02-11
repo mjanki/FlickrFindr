@@ -10,7 +10,7 @@ android {
     compileSdkVersion globalConfiguration.compiledSdkVersion
 
     defaultConfig {
-        applicationId "org.umbrellahq.baseapp"
+        applicationId "org.br.flickrfinder"
         minSdkVersion globalConfiguration.minSdkVersion
         targetSdkVersion globalConfiguration.targetSdkVersion
         versionCode 1
