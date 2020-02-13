@@ -10,9 +10,6 @@ import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnitRunner
-import org.br.network.clients.TaskClient
-import org.br.network.daos.TaskNetworkDao
-import org.br.network.models.TaskNetworkEntity
 import org.br.util.extensions.RxKotlinExtensions
 import retrofit2.Response
 

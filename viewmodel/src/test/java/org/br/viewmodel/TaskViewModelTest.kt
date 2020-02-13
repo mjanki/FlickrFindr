@@ -15,10 +15,6 @@ import org.mockito.Captor
 import org.mockito.Mock
 import org.mockito.junit.MockitoJUnitRunner
 import org.threeten.bp.OffsetDateTime
-import org.br.repository.models.TaskRepoEntity
-import org.br.repository.repositories.TaskRepository
-import org.br.viewmodel.models.TaskViewModelEntity
-import org.br.viewmodel.viewmodels.TaskViewModel
 
 @RunWith(MockitoJUnitRunner::class)
 class TaskViewModelTest {

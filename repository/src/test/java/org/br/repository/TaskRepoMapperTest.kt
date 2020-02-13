@@ -3,11 +3,6 @@ package org.br.repository
 import org.junit.Assert
 import org.junit.Test
 import org.threeten.bp.OffsetDateTime
-import org.br.database.models.TaskDatabaseEntity
-import org.br.network.models.TaskNetworkEntity
-import org.br.repository.mappers.TaskRepoDatabaseMapper
-import org.br.repository.mappers.TaskRepoNetworkMapper
-import org.br.repository.models.TaskRepoEntity
 
 class TaskRepoMapperTest {
     // Mock Entities

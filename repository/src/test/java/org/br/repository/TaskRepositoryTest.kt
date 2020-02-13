@@ -1,8 +1,5 @@
 package org.br.repository
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.doAnswer
-import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import io.reactivex.Flowable
 import io.reactivex.Single
@@ -13,13 +10,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 import org.threeten.bp.OffsetDateTime
-import org.br.database.daos.TaskDatabaseDao
-import org.br.database.models.TaskDatabaseEntity
-import org.br.network.daos.TaskNetworkDao
 import org.br.network.models.ErrorNetworkEntity
-import org.br.network.models.TaskNetworkEntity
-import org.br.repository.models.TaskRepoEntity
-import org.br.repository.repositories.TaskRepository
 import org.br.util.extensions.RxKotlinExtensions
 import retrofit2.Response
 

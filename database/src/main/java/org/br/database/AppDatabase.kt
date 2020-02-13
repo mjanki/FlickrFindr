@@ -6,21 +6,24 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import org.br.database.daos.ErrorNetworkDatabaseDao
+import org.br.database.daos.PhotoDatabaseDao
+import org.br.database.daos.SearchTermDatabaseDao
 
-import org.br.database.daos.TaskDatabaseDao
 import org.br.database.models.ErrorNetworkDatabaseEntity
-import org.br.database.models.TaskDatabaseEntity
-import org.br.database.type_converters.DateTypeConverter
+import org.br.database.models.PhotoDatabaseEntity
+import org.br.database.models.SearchTermDatabaseEntity
 import org.br.database.type_converters.ErrorNetworkTypeConverter
 
 @Database(entities = [
-    TaskDatabaseEntity::class,
+    PhotoDatabaseEntity::class,
+    SearchTermDatabaseEntity::class,
     ErrorNetworkDatabaseEntity::class
 ], version = 1)
 
-@TypeConverters(DateTypeConverter::class, ErrorNetworkTypeConverter::class)
+@TypeConverters(ErrorNetworkTypeConverter::class)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun taskDao(): TaskDatabaseDao
+    abstract fun photoDao(): PhotoDatabaseDao
+    abstract fun searchTermDao(): SearchTermDatabaseDao
     abstract fun errorNetworkDao(): ErrorNetworkDatabaseDao
 
     companion object {

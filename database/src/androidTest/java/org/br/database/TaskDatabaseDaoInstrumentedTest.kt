@@ -7,8 +7,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jakewharton.threetenabp.AndroidThreeTen
 import org.junit.*
 import org.junit.runner.RunWith
-import org.br.database.daos.TaskDatabaseDao
-import org.br.database.models.TaskDatabaseEntity
 import java.io.IOException
 import java.util.*
 

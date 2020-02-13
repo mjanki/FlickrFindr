@@ -6,29 +6,20 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
-import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.fragment_main.*
 import org.br.flickrfinder.R
-import org.br.flickrfinder.adapters.TasksRecyclerViewAdapter
-import org.br.flickrfinder.mappers.TaskViewViewModelMapper
-import org.br.flickrfinder.models.TaskViewEntity
+import org.br.flickrfinder.adapters.PhotosRecyclerViewAdapter
 import org.br.util.inflate
-import org.br.viewmodel.models.TaskViewModelEntity
-import org.br.viewmodel.viewmodels.TaskViewModel
+import org.br.viewmodel.viewmodels.PhotosListViewModel
 
 class MainFragment : BaseFragment() {
-    private lateinit var taskVM: TaskViewModel
-
-    private val taskViewViewModelMapper = TaskViewViewModelMapper()
-
-    private val tasksRecyclerViewAdapter = TasksRecyclerViewAdapter(arrayOf())
-    private val linearLayoutManager = LinearLayoutManager(activity)
+    private lateinit var photosListVM: PhotosListViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        taskVM = ViewModelProviders.of(this).get(TaskViewModel::class.java)
-        taskVM.init()
+        photosListVM = ViewModelProviders.of(this).get(PhotosListViewModel::class.java)
+        photosListVM.init()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -38,55 +29,30 @@ class MainFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupTasksRecyclerView()
+        setupPhotosRecyclerView()
 
-        setupTasksObservers()
-        setupTasksClickListeners()
-    }
+        photosListVM.getAllPhotos().observe(
+                viewLifecycleOwner,
+                Observer { photos ->
+                    if (photos.isEmpty()) return@Observer
 
-    private fun setupTasksRecyclerView() {
-        rvTasks.apply {
-            layoutManager = linearLayoutManager
-            adapter = tasksRecyclerViewAdapter
-        }
+                    (rvPhotos.adapter as? PhotosRecyclerViewAdapter)?.let {
+                        it.photos = photos.toTypedArray()
+                        it.notifyDataSetChanged()
+                    }
+                }
+        )
 
-        srlTasksRefresh.setOnRefreshListener {
-            taskVM.retrieveTasks()
-        }
-    }
+        photosListVM.retrievePhotos("dogs")
 
-    private fun setupTasksObservers() {
-        taskVM.getAllTasks().observe(viewLifecycleOwner, Observer<List<TaskViewModelEntity>> {
-            tasksRecyclerViewAdapter.tasks = it.map { taskViewModelEntity ->
-                taskViewViewModelMapper.upstream(taskViewModelEntity)
-            }.toTypedArray()
-
-            if (!taskVM.insertingTask) {
-                tasksRecyclerViewAdapter.notifyDataSetChanged()
-                return@Observer
-            }
-
-            tasksRecyclerViewAdapter.notifyItemInserted(0)
-            linearLayoutManager.scrollToPosition(0)
-
-            taskVM.insertingTask = false
-        })
-
-        taskVM.getIsRetrievingTasks().observe(viewLifecycleOwner, Observer {
-            srlTasksRefresh.isRefreshing = it
-        })
-    }
-
-    private fun setupTasksClickListeners() {
         fabAddTask.setOnClickListener {
-            taskVM.insertingTask = true
-            taskVM.insertTask(
-                    taskViewViewModelMapper.downstream(
-                            TaskViewEntity(
-                                    name = "New Task ${taskVM.getAllTasks().value?.size}"
-                            )
-                    )
-            )
+            photosListVM.retrievePhotos("dogs", 2)
+        }
+    }
+
+    private fun setupPhotosRecyclerView() {
+        rvPhotos.apply {
+            adapter = PhotosRecyclerViewAdapter(arrayOf())
         }
     }
 }
