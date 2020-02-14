@@ -5,10 +5,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import io.reactivex.rxkotlin.addTo
 import org.br.repository.repositories.PhotosRepository
+import org.br.viewmodel.mappers.PhotoViewModelRepoMapper
+import org.br.viewmodel.models.PhotoViewModelEntity
 
 class PhotosListViewModel(application: Application) : BaseViewModel(application) {
     private lateinit var photosRepository: PhotosRepository
-    private var allPhotos = MutableLiveData<List<String>>()
+    private var allPhotos = MutableLiveData<List<PhotoViewModelEntity>>()
+
+    private val photoViewModelRepoMapper = PhotoViewModelRepoMapper()
 
     fun init() {
         init(testPhotosRepository = null)
@@ -19,7 +23,11 @@ class PhotosListViewModel(application: Application) : BaseViewModel(application)
         photosRepository.init()
 
         photosRepository.getPhotos().subscribe { photoRepoEntityList ->
-            allPhotos.postValue(photoRepoEntityList)
+            allPhotos.postValue(
+                    photoRepoEntityList.map {
+                        photoViewModelRepoMapper.upstream(it)
+                    }
+            )
         }.addTo(disposables)
 
         /*taskRepository.isRetrievingTasks.subscribe {
@@ -27,7 +35,7 @@ class PhotosListViewModel(application: Application) : BaseViewModel(application)
         }.addTo(disposables)*/
     }
 
-    fun getAllPhotos(): LiveData<List<String>> = allPhotos
+    fun getAllPhotos(): LiveData<List<PhotoViewModelEntity>> = allPhotos
 
     /*private val isRetrievingTasks = MutableLiveData<Boolean>()
     fun getIsRetrievingTasks(): LiveData<Boolean> = isRetrievingTasks*/

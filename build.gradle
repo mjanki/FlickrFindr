@@ -20,6 +20,9 @@ buildscript {
         // Retrofit
         retrofitVersion = "2.6.2"
 
+        // Glide
+        glideVersion = "4.11.0"
+
         // External Utils
         threetenabpVersion = "1.2.1"
 
@@ -60,6 +63,9 @@ buildscript {
                 retrofit: ("com.squareup.retrofit2:retrofit:$retrofitVersion"),
                 retrofitRxJava: ("com.squareup.retrofit2:adapter-rxjava2:$retrofitVersion"),
                 retrofitMoshi: ("com.squareup.retrofit2:converter-moshi:$retrofitVersion"),
+
+                glide: ("com.github.bumptech.glide:glide:$glideVersion"),
+                glideCompiler: ("com.github.bumptech.glide:compiler:$glideVersion"),
 
                 threetenabp: ("com.jakewharton.threetenabp:threetenabp:$threetenabpVersion"),
 

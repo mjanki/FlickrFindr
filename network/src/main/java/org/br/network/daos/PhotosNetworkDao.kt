@@ -2,6 +2,7 @@ package org.br.network.daos
 
 import io.reactivex.subjects.PublishSubject
 import org.br.network.clients.FlickrClient
+import org.br.network.models.PhotoSizesResultNetworkEntity
 import org.br.network.models.SearchResultNetworkEntity
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -30,7 +31,7 @@ class PhotosNetworkDao : BaseNetworkDao() {
         isRetrievingPhotos.onNext(true)
         executeNetworkCall(
                 observable = requestInterface.getPhotos(text, page),
-                action = "Fetching images from Flickr",
+                action = "Fetching photos from Flickr",
                 onSuccess = {
                     retrievedPhotos.onNext(it)
                 },
@@ -42,7 +43,20 @@ class PhotosNetworkDao : BaseNetworkDao() {
 
     // endregion All Photos Info
 
-    // TODO: code for getting photo sizes
+    val retrievedPhotoSizes = PublishSubject.create<Response<PhotoSizesResultNetworkEntity>>()
+
+    fun retrievePhotoSize(photoId: String) {
+        executeNetworkCall(
+                observable = requestInterface.getPhotoSizes(photoId),
+                action = "Fetching photo sizes from Flickr",
+                onSuccess = {
+                    it.body()?.let { result ->
+                        result.photoId = photoId
+                        retrievedPhotoSizes.onNext(it)
+                    }
+                }
+        )
+    }
 
     // region
 }

@@ -48,15 +48,44 @@ class PhotosRepository(ctx: Context? = null) : ErrorRepository(ctx) {
                             )
                         }
                 )
+
+                searchResultNetworkEntity.photos.photo.forEach { photo ->
+                    retrievePhotoSizes(photo.id)
+                }
+            }
+        }.addTo(disposables)
+
+        photosNetworkDao.retrievedPhotoSizes.subscribe { response ->
+            response.body()?.let { photoSizesResultNetworkEntity ->
+                // TODO: handle non existing images
+
+                val thumbSize = photoSizesResultNetworkEntity.sizes.size.filter {
+                    it.label == "Thumbnail"
+                }[0]
+
+                val originalSize = photoSizesResultNetworkEntity.sizes.size.filter {
+                    it.label == "Original" || it.label == "Large"
+                }[0]
+
+                photoSizesResultNetworkEntity.photoId?.let { photoId ->
+                    insertPhotoSizes(
+                            PhotoRepoEntity(
+                                    id = photoId,
+                                    title = "",
+                                    imgThumb = thumbSize.source,
+                                    imgOriginal = originalSize.source
+                            )
+                    )
+                }
             }
         }.addTo(disposables)
     }
 
-    fun getPhotos(): Flowable<List<String>> =
+    fun getPhotos(): Flowable<List<PhotoRepoEntity>> =
             photoDatabaseDao.getAll().flatMap { photoDatabaseEntityList ->
                 Flowable.fromArray(
                         photoDatabaseEntityList.map {
-                            it.title
+                            photoRepoDatabaseMapper.upstream(it)
                         }
                 )
             }
@@ -65,8 +94,12 @@ class PhotosRepository(ctx: Context? = null) : ErrorRepository(ctx) {
         photosNetworkDao.retrievePhotos(text, page)
     }
 
+    fun retrievePhotoSizes(photoId: String) {
+        photosNetworkDao.retrievePhotoSize(photoId)
+    }
+
     fun insertPhotosInfo(photos: List<PhotoRepoEntity>) {
-        photoDatabaseDao.upsert(
+        photoDatabaseDao.insert(
                 *photos.map {
                     photoRepoDatabaseMapper.downstream(it)
                 }.toTypedArray()
@@ -95,7 +128,7 @@ class PhotosRepository(ctx: Context? = null) : ErrorRepository(ctx) {
                         }
                     }
 
-                    photoDatabaseDao.upsert(photoDatabaseEntity).execute()
+                    photoDatabaseDao.update(photoDatabaseEntity).execute()
                 }
         )
     }

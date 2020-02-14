@@ -1,12 +1,8 @@
 package org.br.database.daos
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 import io.reactivex.Completable
 import io.reactivex.Flowable
-import io.reactivex.Single
 import org.br.database.models.PhotoDatabaseEntity
 
 @Dao
@@ -17,12 +13,11 @@ interface PhotoDatabaseDao {
     @Query("SELECT * FROM photos WHERE id = :id")
     fun getById(id: String): Flowable<List<PhotoDatabaseEntity>>
 
-    // Insert OR Update
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun upsert(photoDatabaseEntity: PhotoDatabaseEntity): Single<Long>
+    @Update
+    fun update(photoDatabaseEntity: PhotoDatabaseEntity): Completable
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun upsert(vararg photoDatabaseEntity: PhotoDatabaseEntity)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insert(vararg photoDatabaseEntity: PhotoDatabaseEntity)
 
     @Query("DELETE FROM photos")
     fun deleteAll(): Completable

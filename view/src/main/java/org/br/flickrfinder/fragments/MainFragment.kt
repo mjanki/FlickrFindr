@@ -9,11 +9,14 @@ import androidx.lifecycle.ViewModelProviders
 import kotlinx.android.synthetic.main.fragment_main.*
 import org.br.flickrfinder.R
 import org.br.flickrfinder.adapters.PhotosRecyclerViewAdapter
+import org.br.flickrfinder.mappers.PhotoListViewViewModelMapper
 import org.br.util.inflate
 import org.br.viewmodel.viewmodels.PhotosListViewModel
 
 class MainFragment : BaseFragment() {
     private lateinit var photosListVM: PhotosListViewModel
+
+    private val photoListViewViewModelMapper = PhotoListViewViewModelMapper()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,9 +39,12 @@ class MainFragment : BaseFragment() {
                 Observer { photos ->
                     if (photos.isEmpty()) return@Observer
 
-                    (rvPhotos.adapter as? PhotosRecyclerViewAdapter)?.let {
-                        it.photos = photos.toTypedArray()
-                        it.notifyDataSetChanged()
+                    (rvPhotos.adapter as? PhotosRecyclerViewAdapter)?.let { adapter ->
+                        adapter.photosList = photos.map {
+                            photoListViewViewModelMapper.upstream(it)
+                        }.toTypedArray()
+
+                        adapter.notifyDataSetChanged()
                     }
                 }
         )
