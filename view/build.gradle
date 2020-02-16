@@ -4,6 +4,8 @@ apply plugin: 'kotlin-android'
 
 apply plugin: 'kotlin-android-extensions'
 
+apply plugin: "androidx.navigation.safeargs"
+
 android {
     def globalConfiguration = rootProject.extensions.getByName("ext")
 
@@ -59,6 +61,7 @@ dependencies {
 
     // Glide
     implementation libs.glide
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     annotationProcessor libs.glideCompiler
 
     // OffsetDateTime backport

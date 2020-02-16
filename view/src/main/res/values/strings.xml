@@ -8,4 +8,10 @@
     <string name="this_is_third_fragment">This is the Third Fragment</string>
     <string name="push_fragment">Push Fragment</string>
     <string name="main_activity">Main Activity</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="fragment_photo_save">Save</string>
+    <string name="fragment_photo_cd">Photo</string>
 </resources>

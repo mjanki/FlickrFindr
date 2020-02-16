@@ -4,8 +4,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.navigation.fragment.findNavController
+import kotlinx.android.synthetic.main.comp_search.*
+import kotlinx.android.synthetic.main.comp_search.view.*
 import kotlinx.android.synthetic.main.fragment_main.*
 import org.br.flickrfinder.R
 import org.br.flickrfinder.adapters.PhotosRecyclerViewAdapter
@@ -40,25 +44,45 @@ class MainFragment : BaseFragment() {
                     if (photos.isEmpty()) return@Observer
 
                     (rvPhotos.adapter as? PhotosRecyclerViewAdapter)?.let { adapter ->
-                        adapter.photosList = photos.map {
-                            photoListViewViewModelMapper.upstream(it)
-                        }.toTypedArray()
+                        adapter.setPhotosList(
+                                photos.map {
+                                    photoListViewViewModelMapper.upstream(it)
+                                }
+                        )
 
                         adapter.notifyDataSetChanged()
                     }
                 }
         )
 
-        photosListVM.retrievePhotos("dogs")
+        photosListVM.getAllSearchTerms().observe(
+                viewLifecycleOwner,
+                Observer { searchTerms ->
+                    context?.let {
+                        actvSearch.setAdapter(
+                                ArrayAdapter<String>(
+                                        it,
+                                        android.R.layout.simple_dropdown_item_1line,
+                                        searchTerms
+                                )
+                        )
+                    }
+                }
+        )
 
-        fabAddTask.setOnClickListener {
-            photosListVM.retrievePhotos("dogs", 2)
+        comp_search.bSearch.setOnClickListener {
+            photosListVM.retrievePhotos(comp_search.actvSearch.text.toString())
         }
     }
 
     private fun setupPhotosRecyclerView() {
-        rvPhotos.apply {
-            adapter = PhotosRecyclerViewAdapter(arrayOf())
+        val adapter = PhotosRecyclerViewAdapter(arrayListOf())
+        adapter.onClick = {
+            findNavController().navigate(
+                    MainFragmentDirections.actionMainFragmentToPhotoFragment(it)
+            )
         }
+
+        rvPhotos.adapter = adapter
     }
 }

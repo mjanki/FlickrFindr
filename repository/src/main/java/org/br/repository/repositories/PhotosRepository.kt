@@ -4,6 +4,8 @@ import android.content.Context
 import io.reactivex.Flowable
 import io.reactivex.rxkotlin.addTo
 import org.br.database.daos.PhotoDatabaseDao
+import org.br.database.daos.SearchTermDatabaseDao
+import org.br.database.models.SearchTermDatabaseEntity
 import org.br.network.daos.PhotosNetworkDao
 import org.br.repository.mappers.ErrorNetworkRepoNetworkMapper
 import org.br.repository.mappers.PhotoRepoDatabaseMapper
@@ -11,9 +13,10 @@ import org.br.repository.models.PhotoRepoEntity
 import org.br.util.extensions.execute
 import org.br.util.extensions.getValue
 
-class PhotosRepository(ctx: Context? = null) : ErrorRepository(ctx) {
+class PhotosRepository(private val ctx: Context? = null) : ErrorRepository(ctx) {
     // DAOs
     private lateinit var photoDatabaseDao: PhotoDatabaseDao
+    private lateinit var searchTermsRepository: SearchTermsRepository
     private lateinit var photosNetworkDao: PhotosNetworkDao
 
     // Mappers
@@ -23,12 +26,23 @@ class PhotosRepository(ctx: Context? = null) : ErrorRepository(ctx) {
     override fun init() {
         super.init()
 
-        init(testPhotoDatabaseDao = null, testPhotosNetworkDao = null)
+        init(
+                testPhotoDatabaseDao = null,
+                testSearchTermsRepository = null,
+                testPhotosNetworkDao = null
+        )
     }
 
-    fun init(testPhotoDatabaseDao: PhotoDatabaseDao? = null, testPhotosNetworkDao: PhotosNetworkDao? = null) {
+    fun init(
+            testPhotoDatabaseDao: PhotoDatabaseDao? = null,
+            testSearchTermsRepository: SearchTermsRepository? = null,
+            testPhotosNetworkDao: PhotosNetworkDao? = null) {
+
         photoDatabaseDao = testPhotoDatabaseDao ?: appDatabase.photoDao()
         photosNetworkDao = testPhotosNetworkDao ?: PhotosNetworkDao()
+
+        searchTermsRepository = testSearchTermsRepository ?: SearchTermsRepository(ctx)
+        searchTermsRepository.init()
 
         photosNetworkDao.errorNetwork.subscribe { errorNetworkEntity ->
             insertErrorNetwork(
@@ -63,9 +77,14 @@ class PhotosRepository(ctx: Context? = null) : ErrorRepository(ctx) {
                     it.label == "Thumbnail"
                 }[0]
 
-                val originalSize = photoSizesResultNetworkEntity.sizes.size.filter {
+                val originalSizeArray = photoSizesResultNetworkEntity.sizes.size.filter {
                     it.label == "Original" || it.label == "Large"
-                }[0]
+                }
+
+                var originalSize = ""
+                if (originalSizeArray.isNotEmpty()) {
+                    originalSize = originalSizeArray[0].source
+                }
 
                 photoSizesResultNetworkEntity.photoId?.let { photoId ->
                     insertPhotoSizes(
@@ -73,7 +92,7 @@ class PhotosRepository(ctx: Context? = null) : ErrorRepository(ctx) {
                                     id = photoId,
                                     title = "",
                                     imgThumb = thumbSize.source,
-                                    imgOriginal = originalSize.source
+                                    imgOriginal = originalSize
                             )
                     )
                 }
@@ -90,7 +109,24 @@ class PhotosRepository(ctx: Context? = null) : ErrorRepository(ctx) {
                 )
             }
 
+    fun getPhotoById(photoId: String): Flowable<List<PhotoRepoEntity>> =
+        photoDatabaseDao.getById(photoId).flatMap { photoDatabaseEntities ->
+            Flowable.fromArray(
+                    photoDatabaseEntities.map {
+                        photoRepoDatabaseMapper.upstream(it)
+                    }
+            )
+        }
+
     fun retrievePhotos(text: String, page: Long = 1) {
+        if (page == 1.toLong()) {
+            // Delete all non-saved entites on new searches
+            photoDatabaseDao.deleteNonSaved().execute()
+
+            // Add search term to SearchTerms Table
+            searchTermsRepository.saveSearchTerm(text)
+        }
+
         photosNetworkDao.retrievePhotos(text, page)
     }
 

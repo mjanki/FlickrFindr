@@ -10,6 +10,8 @@ import retrofit2.Response
 object RxKotlinExtensions {
     var isTesting = false
     fun getScheduler(): Scheduler = if (isTesting) Schedulers.trampoline() else Schedulers.io()
+
+    const val TAG = "RxExtensions"
 }
 
 // Use to invoke Completable
@@ -66,7 +68,9 @@ fun <T> Observable<Response<T>>.execute(
 
     return subscribeOn(
             RxKotlinExtensions.getScheduler()
-    ).doOnComplete {
+    ).doOnError { throwable ->
+        throwable.printError(RxKotlinExtensions.TAG)
+    }.doOnComplete {
         onComplete?.let { onComplete -> onComplete() }
     }.subscribe (
             { response ->
