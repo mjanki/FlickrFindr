@@ -1,6 +1,7 @@
 package org.br.viewmodel.viewmodels
 
 import android.app.Application
+import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import io.reactivex.rxkotlin.addTo
@@ -13,6 +14,8 @@ class PhotoViewModel(application: Application) : BaseViewModel(application) {
     private var photo = MutableLiveData<PhotoViewModelEntity>()
 
     private val photoViewModelRepoMapper = PhotoViewModelRepoMapper()
+
+    private var photoBitmap = MutableLiveData<Bitmap>()
 
     fun init(photoId: String) {
         init(photoId = photoId, testPhotosRepository = null)
@@ -36,6 +39,7 @@ class PhotoViewModel(application: Application) : BaseViewModel(application) {
     }
 
     fun getPhoto(): LiveData<PhotoViewModelEntity> = photo
+    fun getPhotoBitmap(): LiveData<Bitmap> = photoBitmap
 
     override fun onCleared() {
         super.onCleared()

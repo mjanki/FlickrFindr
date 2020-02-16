@@ -18,6 +18,9 @@ class PhotosListViewModel(application: Application) : BaseViewModel(application)
 
     private val photoViewModelRepoMapper = PhotoViewModelRepoMapper()
 
+    private var currentPage = 1
+    private var currentSearchTerm = ""
+
     fun init() {
         init(testPhotosRepository = null, testSearchTermsRepository = null)
     }
@@ -54,7 +57,13 @@ class PhotosListViewModel(application: Application) : BaseViewModel(application)
     fun getIsRetrievingTasks(): LiveData<Boolean> = isRetrievingTasks*/
 
     fun retrievePhotos(text: String, page: Long = 1) {
+        currentPage = 1
+        currentSearchTerm = text
         photosRepository.retrievePhotos(text, page)
+    }
+
+    fun retrieveNextPage() {
+        photosRepository.retrievePhotos(currentSearchTerm, (++currentPage).toLong())
     }
 
     override fun onCleared() {

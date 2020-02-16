@@ -54,17 +54,19 @@ class PhotosRepository(private val ctx: Context? = null) : ErrorRepository(ctx) 
 
         photosNetworkDao.retrievedPhotos.subscribe {
             it.body()?.let { searchResultNetworkEntity ->
-                insertPhotosInfo(
-                        searchResultNetworkEntity.photos.photo.map { photoNetworkEntity ->
-                            PhotoRepoEntity(
-                                    photoNetworkEntity.id,
-                                    photoNetworkEntity.title
-                            )
-                        }
-                )
+                searchResultNetworkEntity.photos?.let { photos ->
+                    insertPhotosInfo(
+                            photos.photo.map { photoNetworkEntity ->
+                                PhotoRepoEntity(
+                                        photoNetworkEntity.id,
+                                        photoNetworkEntity.title
+                                )
+                            }
+                    )
 
-                searchResultNetworkEntity.photos.photo.forEach { photo ->
-                    retrievePhotoSizes(photo.id)
+                    photos.photo.forEach { photo ->
+                        retrievePhotoSizes(photo.id)
+                    }
                 }
             }
         }.addTo(disposables)

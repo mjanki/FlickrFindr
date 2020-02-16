@@ -83,6 +83,10 @@ class MainFragment : BaseFragment() {
             )
         }
 
+        adapter.onNextPage = {
+            photosListVM.retrieveNextPage()
+        }
+
         rvPhotos.adapter = adapter
     }
 }

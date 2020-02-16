@@ -14,6 +14,7 @@ import org.br.flickrfinder.models.PhotoListViewEntity
 
 class PhotosRecyclerViewAdapter(private var photosList: ArrayList<PhotoListViewEntity>) : RecyclerView.Adapter<PhotosRecyclerViewAdapter.TaskViewHolder>() {
     var onClick: ((photoId: String) -> Unit)? = null
+    var onNextPage: (() -> Unit)? = null
 
     fun setPhotosList(photosList: List<PhotoListViewEntity>) {
         val diffCallback = PhotosDiffCallback(this.photosList, photosList)
@@ -47,6 +48,10 @@ class PhotosRecyclerViewAdapter(private var photosList: ArrayList<PhotoListViewE
 
         holder.itemView.setOnClickListener {
             onClick?.invoke(photo.id)
+        }
+
+        if (position == photosList.size - 1) {
+            onNextPage?.invoke()
         }
     }
 

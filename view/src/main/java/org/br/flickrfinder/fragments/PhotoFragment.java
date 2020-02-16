@@ -1,23 +1,24 @@
 package org.br.flickrfinder.fragments;
 
 
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProviders;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProviders;
+
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
 
 import org.br.flickrfinder.R;
-import org.br.viewmodel.models.PhotoViewModelEntity;
 import org.br.viewmodel.viewmodels.PhotoViewModel;
 
 public class PhotoFragment extends Fragment {
@@ -57,7 +58,21 @@ public class PhotoFragment extends Fragment {
 
         photoVM.getPhoto().observe(
                 getViewLifecycleOwner(),
-                photoViewModelEntity -> Glide.with(PhotoFragment.this).load(photoViewModelEntity.getImgOriginal()).placeholder(R.drawable.ic_happy).into(ivPhoto)
+                photoViewModelEntity -> {
+                    Glide.with(PhotoFragment.this)
+                            .asBitmap()
+                            .load(photoViewModelEntity.getImgOriginal())
+                            .placeholder(R.drawable.ic_happy)
+                            .into(new CustomTarget<Bitmap>() {
+                                @Override
+                                public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                                    ivPhoto.setImageBitmap(resource);
+                                }
+
+                                @Override
+                                public void onLoadCleared(@Nullable Drawable placeholder) { }
+                            });
+                }
         );
     }
 }
