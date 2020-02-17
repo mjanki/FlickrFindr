@@ -76,8 +76,7 @@ class PhotosRecyclerViewAdapter(private var photosList: ArrayList<PhotoViewEntit
             onClick?.invoke(photo)
         }
 
-        // I didn't feel the need to implement the new Paging adapter for this
-        // This will notify the fragment of reaching the next page to load more images
+        // Perhaps a PagedListAdapter is a good idea here; for now this should be good enough
         if (position == photosList.size - 1) {
             onNextPage?.invoke()
         }

@@ -13,9 +13,11 @@ class PhotoViewModel(application: Application) : BaseViewModel(application) {
 
     lateinit var photo: PhotoViewModelEntity
 
+    // Used to push photo bitmap to UI
     private val photoBitmap = MutableLiveData<Bitmap>()
     fun getPhotoBitmap(): LiveData<Bitmap> = photoBitmap
 
+    // Used to push saved status to UI
     private val photoSavedLiveData = MutableLiveData<Boolean>()
     fun getPhotoSavedLiveData(): LiveData<Boolean> = photoSavedLiveData
 
@@ -29,6 +31,10 @@ class PhotoViewModel(application: Application) : BaseViewModel(application) {
 
         this.photo = photo
 
+        setupPhotoSavedObservers()
+    }
+
+    private fun setupPhotoSavedObservers() {
         // If photo is saved notify UI
         photosRepository.photoSaved.subscribe {
             photoSavedLiveData.postValue(it)

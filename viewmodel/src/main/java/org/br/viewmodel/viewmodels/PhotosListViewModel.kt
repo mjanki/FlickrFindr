@@ -14,11 +14,14 @@ class PhotosListViewModel(application: Application) : BaseViewModel(application)
     private lateinit var searchTermsRepository: SearchTermsRepository
 
     private var allPhotos = MutableLiveData<List<PhotoViewModelEntity>>()
+    fun getAllPhotos(): LiveData<List<PhotoViewModelEntity>> = allPhotos
+
     private var allSearchTerms = MutableLiveData<List<String>>()
+    fun getAllSearchTerms(): LiveData<List<String>> = allSearchTerms
 
     private val photoViewModelRepoMapper = PhotoViewModelRepoMapper()
 
-    private var currentPage = 1
+    private var currentPage: Long = 1
     private var currentSearchTerm = ""
 
     fun init() {
@@ -32,38 +35,45 @@ class PhotosListViewModel(application: Application) : BaseViewModel(application)
         searchTermsRepository = testSearchTermsRepository ?: SearchTermsRepository(getApplication())
         searchTermsRepository.init()
 
-        photosRepository.getPhotos().subscribe { photoRepoEntityList ->
-            allPhotos.postValue(
-                    photoRepoEntityList.map {
-                        photoViewModelRepoMapper.upstream(it)
-                    }
-            )
-        }.addTo(disposables)
-
-        searchTermsRepository.getSearchTerms().subscribe { searchTerms ->
-            allSearchTerms.postValue(searchTerms)
-        }.addTo(disposables)
+        setupPhotosObservers()
+        setupSearchTermsObservers()
 
         /*taskRepository.isRetrievingTasks.subscribe {
             isRetrievingTasks.postValue(it)
         }.addTo(disposables)*/
     }
 
-    fun getAllPhotos(): LiveData<List<PhotoViewModelEntity>> = allPhotos
+    private fun setupPhotosObservers() {
+        // Observe Photos and push to UI
+        photosRepository.getPhotos().subscribe { photoRepoEntities ->
+            allPhotos.postValue(
+                    photoRepoEntities.map {
+                        photoViewModelRepoMapper.upstream(it)
+                    }
+            )
+        }.addTo(disposables)
+    }
 
-    fun getAllSearchTerms(): LiveData<List<String>> = allSearchTerms
+    private fun setupSearchTermsObservers() {
+        // Observe Search Terms and push to UI
+        searchTermsRepository.getSearchTerms().subscribe { searchTerms ->
+            allSearchTerms.postValue(searchTerms)
+        }.addTo(disposables)
+    }
+
 
     /*private val isRetrievingTasks = MutableLiveData<Boolean>()
     fun getIsRetrievingTasks(): LiveData<Boolean> = isRetrievingTasks*/
 
-    fun retrievePhotos(text: String, page: Long = 1) {
+    fun retrievePhotosFirstPage(text: String) {
         currentPage = 1
         currentSearchTerm = text
-        photosRepository.retrievePhotos(text, page)
+
+        photosRepository.retrievePhotos(text, currentPage)
     }
 
-    fun retrieveNextPage() {
-        photosRepository.retrievePhotos(currentSearchTerm, (++currentPage).toLong())
+    fun retrievePhotosNextPage() {
+        photosRepository.retrievePhotos(currentSearchTerm, (++currentPage))
     }
 
     override fun onCleared() {

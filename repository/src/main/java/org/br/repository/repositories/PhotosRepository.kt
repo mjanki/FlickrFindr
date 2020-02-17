@@ -67,6 +67,8 @@ class PhotosRepository(private val ctx: Context? = null) : ErrorRepository(ctx) 
     }
 
     private fun setupRetrievedPhotosObservers() {
+        // Observe retrieved photos from the Network and save initial info in the DB, then fetch
+        // photo sizes from the Network for each photo
         photosNetworkDao.retrievedPhotos.subscribe { response ->
             response.body()?.let { searchResultNetworkEntity ->
                 searchResultNetworkEntity.photos?.let { photos ->
@@ -93,8 +95,10 @@ class PhotosRepository(private val ctx: Context? = null) : ErrorRepository(ctx) 
     }
 
     private fun setupRetrievedPhotoSizesObservers() {
+        // Observe photo sizes retrieved from the Network and update DB entries accordingly
         photosNetworkDao.retrievedPhotoSizes.subscribe { response ->
             response.body()?.let { photoSizesResultNetworkEntity ->
+                // Get Thumbnail info if exists
                 val thumbSizeList = photoSizesResultNetworkEntity.sizes?.size?.filter {
                     it.label == "Thumbnail"
                 }
@@ -104,6 +108,7 @@ class PhotosRepository(private val ctx: Context? = null) : ErrorRepository(ctx) 
                     thumbSizeUrl = thumbSizeList.first().source
                 }
 
+                // Get Original (or Large) info if exists
                 val originalSizeList = photoSizesResultNetworkEntity.sizes?.size?.filter {
                     it.label == "Original" || it.label == "Large"
                 }
@@ -113,6 +118,7 @@ class PhotosRepository(private val ctx: Context? = null) : ErrorRepository(ctx) 
                     originalSizeUrl = originalSizeList.first().source
                 }
 
+                // Update DB if both Thumbnail and Original/Large exist
                 if (thumbSizeUrl.isNotEmpty() && originalSizeUrl.isNotEmpty()) {
                     photoSizesResultNetworkEntity.photoId?.let { photoId ->
                         insertPhotoSizes(

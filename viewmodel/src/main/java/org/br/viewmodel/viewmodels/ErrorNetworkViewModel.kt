@@ -10,7 +10,9 @@ import org.br.viewmodel.models.ErrorNetworkViewModelEntity
 
 class ErrorNetworkViewModel(application: Application) : BaseViewModel(application) {
     private lateinit var errorRepository: ErrorRepository
+
     private var errorsNetwork = MutableLiveData<List<ErrorNetworkViewModelEntity>>()
+    fun getErrorsNetwork(): LiveData<List<ErrorNetworkViewModelEntity>> = errorsNetwork
 
     private var errorNetworkRepoViewModelMapper = ErrorNetworkViewModelRepoMapper()
 
@@ -30,8 +32,6 @@ class ErrorNetworkViewModel(application: Application) : BaseViewModel(applicatio
             )
         }.addTo(disposables)
     }
-
-    fun getErrorsNetwork(): LiveData<List<ErrorNetworkViewModelEntity>> = errorsNetwork
 
     fun deleteErrorNetwork(errorNetworkViewModelEntity: ErrorNetworkViewModelEntity) {
         errorRepository.deleteErrorNetwork(

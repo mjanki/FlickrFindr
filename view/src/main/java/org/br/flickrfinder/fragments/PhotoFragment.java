@@ -1,11 +1,9 @@
 package org.br.flickrfinder.fragments;
 
 
-import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -70,19 +68,57 @@ public class PhotoFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        setupPhotoObservers(
-                view.findViewById(R.id.ivPhoto),
-                view.findViewById(R.id.bSave));
+        Button bSave = view.findViewById(R.id.bSave);
+        ImageView ivPhoto = view.findViewById(R.id.ivPhoto);
 
-        setupStatusObservers();
-        setupSaveButton(view.findViewById(R.id.bSave));
+        setupPhotoObservers(ivPhoto);
+        setupStatusObservers(bSave);
+        setupSaveButton(bSave);
+
+        setupView(bSave);
     }
 
-    private void setupPhotoObservers(ImageView ivPhoto, Button bSave) {
+    private void setupPhotoObservers(ImageView ivPhoto) {
+        // Observe photo, display and set Original Bitmap (to allow saving)
+        photoVM.getPhotoBitmap().observe(
+                getViewLifecycleOwner(),
+                bitmap -> {
+                    ivPhoto.setImageBitmap(bitmap);
+
+                    if (photoVM.getPhoto().getOriginalBitmap() == null) {
+                        photoVM.getPhoto().setOriginalBitmap(bitmap);
+                    }
+                }
+        );
+    }
+
+    private void setupStatusObservers(Button bSave) {
+        // If image is saved successfully disable Save button
+        photoVM.getPhotoSavedLiveData().observe(
+                getViewLifecycleOwner(),
+                saved -> bSave.setEnabled(!saved)
+        );
+    }
+
+    private void setupSaveButton(Button bSave) {
+        // If Permissions don't exist request them before saving then save, otherwise save
+        bSave.setOnClickListener(v -> {
+            if (PermissionUtilsKt.hasWritePermissions(getContext())) {
+                savePhoto();
+            } else {
+                PermissionUtilsKt.requestWritePermissions(this, 42);
+            }
+        });
+    }
+
+    private void setupView(Button bSave) {
+        // Disable Save button until image is fetched and checked that it isn't saved already
         bSave.setEnabled(false);
 
         PhotoViewEntity photo = photoViewViewModelMapper.upstream(photoVM.getPhoto());
 
+        // If photo is not saved get Bitmap from Url, enable save, and notify VM,
+        // otherwise just notify VM
         if (photo.getOriginalBitmap() == null) {
             Glide.with(PhotoFragment.this)
                     .asBitmap()
@@ -101,26 +137,8 @@ public class PhotoFragment extends Fragment {
                         }
                     });
         } else {
-            bSave.setEnabled(false);
-
             photoVM.postPhoto(photo.getOriginalBitmap());
         }
-
-        photoVM.getPhotoBitmap().observe(
-                getViewLifecycleOwner(),
-                bitmap -> {
-                    ivPhoto.setImageBitmap(bitmap);
-
-                    if (photoVM.getPhoto().getOriginalBitmap() == null) {
-                        photoVM.getPhoto().setOriginalBitmap(bitmap);
-                    }
-                }
-        );
-
-        photoVM.getPhotoSavedLiveData().observe(
-                getViewLifecycleOwner(),
-                saved -> bSave.setEnabled(!saved)
-        );
     }
 
     private void savePhoto() {
@@ -141,31 +159,14 @@ public class PhotoFragment extends Fragment {
                 });
     }
 
-    private void setupStatusObservers() {
-
-    }
-
-    private void setupSaveButton(Button bSave) {
-        // If Permissions don't exist request them before saving, otherwise save
-        bSave.setOnClickListener(v -> {
-            if (PermissionUtilsKt.hasWritePermissions(getContext())) {
-                savePhoto();
-            } else {
-                PermissionUtilsKt.requestWritePermissions(this, 42);
-            }
-        });
-    }
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == 42) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                savePhoto();
-            } else {
-                Toast.makeText(getActivity(), "Permission Denied", Toast.LENGTH_LONG).show();
-            }
-        }
-
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (PermissionUtilsKt.hasWritePermissions(getContext())) {
+            savePhoto();
+        } else {
+            Toast.makeText(getActivity(), "Permission Denied", Toast.LENGTH_LONG).show();
+        }
     }
 }

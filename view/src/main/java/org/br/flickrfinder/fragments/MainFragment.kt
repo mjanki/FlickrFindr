@@ -3,7 +3,6 @@ package org.br.flickrfinder.fragments
 import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
@@ -39,7 +38,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         setupSearchTermsObservers()
 
         comp_search.bSearch.setOnClickListener {
-            photosListVM.retrievePhotos(comp_search.actvSearch.text.toString())
+            photosListVM.retrievePhotosFirstPage(comp_search.actvSearch.text.toString())
         }
     }
 
@@ -94,7 +93,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         }
 
         adapter.onNextPage = {
-            photosListVM.retrieveNextPage()
+            photosListVM.retrievePhotosNextPage()
         }
 
         rvPhotos.adapter = adapter

@@ -10,6 +10,7 @@ class PhotoViewModelRepoMapper : Mapper<PhotoViewModelEntity, PhotoRepoEntity> {
             title = currentLayerEntity.title,
             thumbUrl = currentLayerEntity.thumbUrl,
             originalUrl = currentLayerEntity.originalUrl,
+            thumbBitmap = currentLayerEntity.thumbBitmap,
             originalBitmap = currentLayerEntity.originalBitmap
     )
 
