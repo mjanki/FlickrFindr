@@ -9,7 +9,6 @@ import org.br.flickrfinder.R
 import org.br.flickrfinder.mappers.ErrorNetworkViewViewModelMapper
 import org.br.flickrfinder.models.ErrorNetworkViewEntity
 import org.br.util.NavigationUtil
-import org.br.util.helper.removeOverlay
 import org.br.viewmodel.models.ErrorNetworkViewModelEntity
 import org.br.viewmodel.viewmodels.ErrorNetworkViewModel
 
@@ -64,11 +63,5 @@ open class BaseActivity : AppCompatActivity() {
         currentErrorNetwork?.let {
             errorNetworkVM.deleteErrorNetwork(it)
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        removeOverlay(this)
     }
 }

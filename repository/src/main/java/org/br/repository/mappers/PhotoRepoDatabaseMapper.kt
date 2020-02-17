@@ -8,16 +8,18 @@ class PhotoRepoDatabaseMapper : Mapper<PhotoRepoEntity, PhotoDatabaseEntity> {
     override fun downstream(currentLayerEntity: PhotoRepoEntity) = PhotoDatabaseEntity(
             id = currentLayerEntity.id,
             title = currentLayerEntity.title,
-            imgThumb = currentLayerEntity.imgThumb,
-            imgOriginal = currentLayerEntity.imgOriginal,
-            isSaved = currentLayerEntity.isSaved
+            thumbUrl = currentLayerEntity.thumbUrl,
+            originalUrl = currentLayerEntity.originalUrl,
+            thumbPath = currentLayerEntity.thumbPath,
+            originalPath = currentLayerEntity.originalPath
     )
 
     override fun upstream(nextLayerEntity: PhotoDatabaseEntity) = PhotoRepoEntity(
             id = nextLayerEntity.id,
             title = nextLayerEntity.title,
-            imgThumb = nextLayerEntity.imgThumb,
-            imgOriginal = nextLayerEntity.imgOriginal,
-            isSaved = nextLayerEntity.isSaved
+            thumbUrl = nextLayerEntity.thumbUrl,
+            originalUrl = nextLayerEntity.originalUrl,
+            thumbPath = nextLayerEntity.thumbPath,
+            originalPath = nextLayerEntity.originalPath
     )
 }

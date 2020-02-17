@@ -43,6 +43,8 @@ class PhotosNetworkDao : BaseNetworkDao() {
 
     // endregion All Photos Info
 
+    // region Photo Sizes
+
     val retrievedPhotoSizes = PublishSubject.create<Response<PhotoSizesResultNetworkEntity>>()
 
     fun retrievePhotoSize(photoId: String) {
@@ -58,5 +60,5 @@ class PhotosNetworkDao : BaseNetworkDao() {
         )
     }
 
-    // region
+    // endregion Photo Sizes
 }

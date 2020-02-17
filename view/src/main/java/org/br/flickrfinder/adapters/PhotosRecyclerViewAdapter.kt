@@ -10,13 +10,14 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.row_photo.view.*
 import org.br.flickrfinder.R
-import org.br.flickrfinder.models.PhotoListViewEntity
+import org.br.flickrfinder.models.PhotoViewEntity
 
-class PhotosRecyclerViewAdapter(private var photosList: ArrayList<PhotoListViewEntity>) : RecyclerView.Adapter<PhotosRecyclerViewAdapter.TaskViewHolder>() {
-    var onClick: ((photoId: String) -> Unit)? = null
+class PhotosRecyclerViewAdapter(private var photosList: ArrayList<PhotoViewEntity>) : RecyclerView.Adapter<PhotosRecyclerViewAdapter.TaskViewHolder>() {
+    var onClick: ((photo: PhotoViewEntity) -> Unit)? = null
     var onNextPage: (() -> Unit)? = null
 
-    fun setPhotosList(photosList: List<PhotoListViewEntity>) {
+    // Use DiffUtil to calculate and load changes to photosList items efficiently
+    fun setPhotosList(photosList: List<PhotoViewEntity>) {
         val diffCallback = PhotosDiffCallback(this.photosList, photosList)
         val diffResult = DiffUtil.calculateDiff(diffCallback)
         this.photosList.clear()
@@ -42,14 +43,41 @@ class PhotosRecyclerViewAdapter(private var photosList: ArrayList<PhotoListViewE
             holder.tvPhotoTitle.text = photosList[position].title
         }
 
-        if (photo.imgThumb.isNotEmpty()) {
-            Glide.with(holder.imageView).load(photo.imgThumb).placeholder(R.drawable.ic_happy).into(holder.imageView)
+        // Hide check unless saved
+        holder.ivCheck.visibility = View.GONE
+
+        // Load Bitmap if exists, if not load URL if exists, if not set empty image
+        when {
+            photo.thumbBitmap != null -> {
+                Glide.with(holder.imageView)
+                        .load(photo.thumbBitmap)
+                        .placeholder(R.drawable.ic_happy)
+                        .into(holder.imageView)
+
+                // Show check if saved
+                holder.ivCheck.visibility = View.VISIBLE
+            }
+
+            photo.thumbUrl.isNotEmpty() -> {
+                Glide.with(holder.imageView)
+                        .load(photo.thumbUrl)
+                        .placeholder(R.drawable.ic_happy)
+                        .into(holder.imageView)
+            }
+
+            else -> {
+                Glide.with(holder.imageView)
+                        .load(R.drawable.ic_happy)
+                        .into(holder.imageView)
+            }
         }
 
         holder.itemView.setOnClickListener {
-            onClick?.invoke(photo.id)
+            onClick?.invoke(photo)
         }
 
+        // I didn't feel the need to implement the new Paging adapter for this
+        // This will notify the fragment of reaching the next page to load more images
         if (position == photosList.size - 1) {
             onNextPage?.invoke()
         }
@@ -58,5 +86,6 @@ class PhotosRecyclerViewAdapter(private var photosList: ArrayList<PhotoListViewE
     inner class TaskViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvPhotoTitle: TextView = view.tvPhotoTitle
         val imageView: ImageView = view.imageView
+        val ivCheck: ImageView = view.ivCheck
     }
 }

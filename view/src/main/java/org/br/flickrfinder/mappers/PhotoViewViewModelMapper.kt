@@ -1,19 +1,20 @@
-package org.br.viewmodel.mappers
+package org.br.flickrfinder.mappers
 
-import org.br.repository.models.PhotoRepoEntity
+import org.br.flickrfinder.models.PhotoViewEntity
 import org.br.util.interfaces.Mapper
 import org.br.viewmodel.models.PhotoViewModelEntity
 
-class PhotoViewModelRepoMapper : Mapper<PhotoViewModelEntity, PhotoRepoEntity> {
-    override fun downstream(currentLayerEntity: PhotoViewModelEntity) = PhotoRepoEntity(
+class PhotoViewViewModelMapper : Mapper<PhotoViewEntity, PhotoViewModelEntity> {
+    override fun downstream(currentLayerEntity: PhotoViewEntity) = PhotoViewModelEntity(
             id = currentLayerEntity.id,
             title = currentLayerEntity.title,
             thumbUrl = currentLayerEntity.thumbUrl,
             originalUrl = currentLayerEntity.originalUrl,
+            thumbBitmap = currentLayerEntity.thumbBitmap,
             originalBitmap = currentLayerEntity.originalBitmap
     )
 
-    override fun upstream(nextLayerEntity: PhotoRepoEntity) = PhotoViewModelEntity(
+    override fun upstream(nextLayerEntity: PhotoViewModelEntity) = PhotoViewEntity(
             id = nextLayerEntity.id,
             title = nextLayerEntity.title,
             thumbUrl = nextLayerEntity.thumbUrl,

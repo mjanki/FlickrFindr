@@ -1,11 +1,11 @@
 package org.br.flickrfinder.adapters
 
 import androidx.recyclerview.widget.DiffUtil
-import org.br.flickrfinder.models.PhotoListViewEntity
+import org.br.flickrfinder.models.PhotoViewEntity
 
 class PhotosDiffCallback(
-        private val oldArray: List<PhotoListViewEntity>,
-        private val newArray: List<PhotoListViewEntity>
+        private val oldArray: List<PhotoViewEntity>,
+        private val newArray: List<PhotoViewEntity>
 ) : DiffUtil.Callback()  {
     override fun getOldListSize(): Int = oldArray.size
 
@@ -19,6 +19,8 @@ class PhotosDiffCallback(
         val oldItem = oldArray[oldItemPosition]
         val newItem = newArray[newItemPosition]
 
-        return oldItem.title == newItem.title && oldItem.imgThumb == newItem.imgThumb
+        return oldItem.title == newItem.title &&
+                oldItem.thumbUrl == newItem.thumbUrl &&
+                oldItem.originalUrl == newItem.originalUrl
     }
 }

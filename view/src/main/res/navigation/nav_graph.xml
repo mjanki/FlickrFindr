@@ -8,8 +8,7 @@
     <fragment
         android:id="@+id/mainFragment"
         android:name="org.br.flickrfinder.fragments.MainFragment"
-        android:label="fragment_main"
-        tools:layout="@layout/fragment_main" >
+        tools:layout="@layout/fragment_main">
         <action
             android:id="@+id/action_mainFragment_to_photoFragment"
             app:destination="@id/photoFragment" />
@@ -17,10 +16,9 @@
     <fragment
         android:id="@+id/photoFragment"
         android:name="org.br.flickrfinder.fragments.PhotoFragment"
-        android:label="fragment_photo"
         tools:layout="@layout/fragment_photo" >
         <argument
-            android:name="photoId"
-            app:argType="string" />
+            android:name="photo"
+            app:argType="org.br.flickrfinder.models.PhotoViewEntity" />
     </fragment>
 </navigation>

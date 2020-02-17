@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "72d3d766b4f9fca01c5ece03274f7fc2",
+    "identityHash": "e13e12f4efeb3c42ca1f22b74ee8c80d",
     "entities": [
       {
         "tableName": "photos",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `imgThumb` TEXT NOT NULL, `imgOriginal` TEXT NOT NULL, `isSaved` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `thumbUrl` TEXT NOT NULL, `originalUrl` TEXT NOT NULL, `thumbPath` TEXT NOT NULL, `originalPath` TEXT NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -21,21 +21,27 @@
             "notNull": true
           },
           {
-            "fieldPath": "imgThumb",
-            "columnName": "imgThumb",
+            "fieldPath": "thumbUrl",
+            "columnName": "thumbUrl",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "imgOriginal",
-            "columnName": "imgOriginal",
+            "fieldPath": "originalUrl",
+            "columnName": "originalUrl",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "isSaved",
-            "columnName": "isSaved",
-            "affinity": "INTEGER",
+            "fieldPath": "thumbPath",
+            "columnName": "thumbPath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalPath",
+            "columnName": "originalPath",
+            "affinity": "TEXT",
             "notNull": true
           }
         ],
@@ -122,7 +128,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '72d3d766b4f9fca01c5ece03274f7fc2')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e13e12f4efeb3c42ca1f22b74ee8c80d')"
     ]
   }
 }

@@ -8,7 +8,8 @@ import androidx.room.PrimaryKey
 data class PhotoDatabaseEntity(
         @PrimaryKey var id: String,
         @ColumnInfo(name = "title") var title: String,
-        @ColumnInfo(name = "imgThumb") var imgThumb: String,
-        @ColumnInfo(name = "imgOriginal") var imgOriginal: String,
-        @ColumnInfo(name = "isSaved") var isSaved: Boolean = false
+        @ColumnInfo(name = "thumbUrl") var thumbUrl: String,
+        @ColumnInfo(name = "originalUrl") var originalUrl: String,
+        @ColumnInfo(name = "thumbPath") var thumbPath: String = "",
+        @ColumnInfo(name = "originalPath") var originalPath: String = ""
 )

@@ -1,26 +1,26 @@
 package org.br.flickrfinder.fragments
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.Toast
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.comp_search.*
 import kotlinx.android.synthetic.main.comp_search.view.*
 import kotlinx.android.synthetic.main.fragment_main.*
 import org.br.flickrfinder.R
 import org.br.flickrfinder.adapters.PhotosRecyclerViewAdapter
-import org.br.flickrfinder.mappers.PhotoListViewViewModelMapper
-import org.br.util.inflate
+import org.br.flickrfinder.mappers.PhotoViewViewModelMapper
 import org.br.viewmodel.viewmodels.PhotosListViewModel
 
-class MainFragment : BaseFragment() {
+class MainFragment : Fragment(R.layout.fragment_main) {
     private lateinit var photosListVM: PhotosListViewModel
 
-    private val photoListViewViewModelMapper = PhotoListViewViewModelMapper()
+    private val photoViewViewModelMapper = PhotoViewViewModelMapper()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,15 +29,22 @@ class MainFragment : BaseFragment() {
         photosListVM.init()
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return container?.inflate(R.layout.fragment_main)
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        activity?.title = getString(R.string.app_name)
 
         setupPhotosRecyclerView()
 
+        setupPhotosObservers()
+        setupSearchTermsObservers()
+
+        comp_search.bSearch.setOnClickListener {
+            photosListVM.retrievePhotos(comp_search.actvSearch.text.toString())
+        }
+    }
+
+    private fun setupPhotosObservers() {
+        // When photos are retrieved, map them to current layer and push to adapter
         photosListVM.getAllPhotos().observe(
                 viewLifecycleOwner,
                 Observer { photos ->
@@ -46,15 +53,16 @@ class MainFragment : BaseFragment() {
                     (rvPhotos.adapter as? PhotosRecyclerViewAdapter)?.let { adapter ->
                         adapter.setPhotosList(
                                 photos.map {
-                                    photoListViewViewModelMapper.upstream(it)
+                                    photoViewViewModelMapper.upstream(it)
                                 }
                         )
-
-                        adapter.notifyDataSetChanged()
                     }
                 }
         )
+    }
 
+    private fun setupSearchTermsObservers() {
+        // Retrieve saved search terms (history) from database and push to auto complete adapter
         photosListVM.getAllSearchTerms().observe(
                 viewLifecycleOwner,
                 Observer { searchTerms ->
@@ -69,18 +77,20 @@ class MainFragment : BaseFragment() {
                     }
                 }
         )
-
-        comp_search.bSearch.setOnClickListener {
-            photosListVM.retrievePhotos(comp_search.actvSearch.text.toString())
-        }
     }
 
     private fun setupPhotosRecyclerView() {
         val adapter = PhotosRecyclerViewAdapter(arrayListOf())
+
+        // When item is clicked, if photo doesn't exist then display message saying that
         adapter.onClick = {
-            findNavController().navigate(
-                    MainFragmentDirections.actionMainFragmentToPhotoFragment(it)
-            )
+            if (it.originalUrl.isNotEmpty() || it.originalBitmap != null) {
+                findNavController().navigate(
+                        MainFragmentDirections.actionMainFragmentToPhotoFragment(it)
+                )
+            } else {
+                showImageMissingToast()
+            }
         }
 
         adapter.onNextPage = {
@@ -88,5 +98,9 @@ class MainFragment : BaseFragment() {
         }
 
         rvPhotos.adapter = adapter
+    }
+
+    private fun showImageMissingToast() {
+        Snackbar.make(clMainFragment, "Image doesn't exist", Snackbar.LENGTH_SHORT).show()
     }
 }

@@ -4,7 +4,6 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
 import org.br.database.models.SearchTermDatabaseEntity
@@ -17,7 +16,4 @@ interface SearchTermDatabaseDao {
     // Insert OR Update
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun upsert(searchTermDatabaseEntity: SearchTermDatabaseEntity): Single<Long>
-
-    @Query("DELETE FROM search_terms")
-    fun deleteAll(): Completable
 }

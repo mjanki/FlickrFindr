@@ -1,16 +1,5 @@
 <resources>
     <string name="app_name">Flickr Findr</string>
-    <string name="hello_world">Hello World</string>
-    <string name="beautiful_android">A Beautiful Android!</string>
-
-    <string name="fragment_name_secondary">Secondary Fragment</string>
-
-    <string name="this_is_third_fragment">This is the Third Fragment</string>
-    <string name="push_fragment">Push Fragment</string>
-    <string name="main_activity">Main Activity</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
 
     <string name="fragment_photo_save">Save</string>
     <string name="fragment_photo_cd">Photo</string>

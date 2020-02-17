@@ -1,15 +1,16 @@
 package org.br.repository.repositories
 
 import android.content.Context
+import android.graphics.Bitmap
 import io.reactivex.Flowable
 import io.reactivex.rxkotlin.addTo
+import io.reactivex.subjects.PublishSubject
 import org.br.database.daos.PhotoDatabaseDao
-import org.br.database.daos.SearchTermDatabaseDao
-import org.br.database.models.SearchTermDatabaseEntity
 import org.br.network.daos.PhotosNetworkDao
 import org.br.repository.mappers.ErrorNetworkRepoNetworkMapper
 import org.br.repository.mappers.PhotoRepoDatabaseMapper
 import org.br.repository.models.PhotoRepoEntity
+import org.br.storage.PhotoStorageDao
 import org.br.util.extensions.execute
 import org.br.util.extensions.getValue
 
@@ -18,6 +19,7 @@ class PhotosRepository(private val ctx: Context? = null) : ErrorRepository(ctx) 
     private lateinit var photoDatabaseDao: PhotoDatabaseDao
     private lateinit var searchTermsRepository: SearchTermsRepository
     private lateinit var photosNetworkDao: PhotosNetworkDao
+    private lateinit var photoStorageDao: PhotoStorageDao
 
     // Mappers
     private var photoRepoDatabaseMapper = PhotoRepoDatabaseMapper()
@@ -29,21 +31,32 @@ class PhotosRepository(private val ctx: Context? = null) : ErrorRepository(ctx) 
         init(
                 testPhotoDatabaseDao = null,
                 testSearchTermsRepository = null,
-                testPhotosNetworkDao = null
+                testPhotosNetworkDao = null,
+                testPhotoStorageDao = null
         )
     }
 
     fun init(
             testPhotoDatabaseDao: PhotoDatabaseDao? = null,
             testSearchTermsRepository: SearchTermsRepository? = null,
-            testPhotosNetworkDao: PhotosNetworkDao? = null) {
+            testPhotosNetworkDao: PhotosNetworkDao? = null,
+            testPhotoStorageDao: PhotoStorageDao? = null) {
 
         photoDatabaseDao = testPhotoDatabaseDao ?: appDatabase.photoDao()
         photosNetworkDao = testPhotosNetworkDao ?: PhotosNetworkDao()
+        photoStorageDao = testPhotoStorageDao ?: PhotoStorageDao(ctx!!)
 
         searchTermsRepository = testSearchTermsRepository ?: SearchTermsRepository(ctx)
         searchTermsRepository.init()
 
+        setupErrorNetwork()
+        setupRetrievedPhotosObservers()
+        setupRetrievedPhotoSizesObservers()
+    }
+
+    // region Setup
+
+    private fun setupErrorNetwork() {
         photosNetworkDao.errorNetwork.subscribe { errorNetworkEntity ->
             insertErrorNetwork(
                     errorNetworkRepoNetworkMapper.upstream(
@@ -51,74 +64,89 @@ class PhotosRepository(private val ctx: Context? = null) : ErrorRepository(ctx) 
                     )
             )
         }.addTo(disposables)
+    }
 
-        photosNetworkDao.retrievedPhotos.subscribe {
-            it.body()?.let { searchResultNetworkEntity ->
+    private fun setupRetrievedPhotosObservers() {
+        photosNetworkDao.retrievedPhotos.subscribe { response ->
+            response.body()?.let { searchResultNetworkEntity ->
                 searchResultNetworkEntity.photos?.let { photos ->
-                    insertPhotosInfo(
-                            photos.photo.map { photoNetworkEntity ->
+
+                    // Insert initial info if they don't exist in the DB
+                    photoDatabaseDao.insert(
+                            *photos.photo.map { photoNetworkEntity ->
                                 PhotoRepoEntity(
                                         photoNetworkEntity.id,
                                         photoNetworkEntity.title
                                 )
-                            }
+                            }.map {
+                                photoRepoDatabaseMapper.downstream(it)
+                            }.toTypedArray()
                     )
 
+                    // Retrieve Photo Sizes for each photo
                     photos.photo.forEach { photo ->
                         retrievePhotoSizes(photo.id)
                     }
                 }
             }
         }.addTo(disposables)
+    }
 
+    private fun setupRetrievedPhotoSizesObservers() {
         photosNetworkDao.retrievedPhotoSizes.subscribe { response ->
             response.body()?.let { photoSizesResultNetworkEntity ->
-                // TODO: handle non existing images
-
-                val thumbSize = photoSizesResultNetworkEntity.sizes.size.filter {
+                val thumbSizeList = photoSizesResultNetworkEntity.sizes?.size?.filter {
                     it.label == "Thumbnail"
-                }[0]
+                }
 
-                val originalSizeArray = photoSizesResultNetworkEntity.sizes.size.filter {
+                var thumbSizeUrl = ""
+                if (thumbSizeList?.isNotEmpty() == true) {
+                    thumbSizeUrl = thumbSizeList.first().source
+                }
+
+                val originalSizeList = photoSizesResultNetworkEntity.sizes?.size?.filter {
                     it.label == "Original" || it.label == "Large"
                 }
 
-                var originalSize = ""
-                if (originalSizeArray.isNotEmpty()) {
-                    originalSize = originalSizeArray[0].source
+                var originalSizeUrl = ""
+                if (originalSizeList?.isNotEmpty() == true) {
+                    originalSizeUrl = originalSizeList.first().source
                 }
 
-                photoSizesResultNetworkEntity.photoId?.let { photoId ->
-                    insertPhotoSizes(
-                            PhotoRepoEntity(
-                                    id = photoId,
-                                    title = "",
-                                    imgThumb = thumbSize.source,
-                                    imgOriginal = originalSize
-                            )
-                    )
+                if (thumbSizeUrl.isNotEmpty() && originalSizeUrl.isNotEmpty()) {
+                    photoSizesResultNetworkEntity.photoId?.let { photoId ->
+                        insertPhotoSizes(
+                                PhotoRepoEntity(
+                                        id = photoId,
+                                        title = "",
+                                        thumbUrl = thumbSizeUrl,
+                                        originalUrl = originalSizeUrl
+                                )
+                        )
+                    }
                 }
             }
         }.addTo(disposables)
     }
 
-    fun getPhotos(): Flowable<List<PhotoRepoEntity>> =
-            photoDatabaseDao.getAll().flatMap { photoDatabaseEntityList ->
-                Flowable.fromArray(
-                        photoDatabaseEntityList.map {
-                            photoRepoDatabaseMapper.upstream(it)
-                        }
-                )
-            }
+    // endregion Setup
 
-    fun getPhotoById(photoId: String): Flowable<List<PhotoRepoEntity>> =
-        photoDatabaseDao.getById(photoId).flatMap { photoDatabaseEntities ->
-            Flowable.fromArray(
-                    photoDatabaseEntities.map {
-                        photoRepoDatabaseMapper.upstream(it)
-                    }
-            )
-        }
+    // region Photos List
+
+    fun getPhotos(): Flowable<List<PhotoRepoEntity>> =
+            photoDatabaseDao.getAll().flatMap { photoDatabaseEntities ->
+                val photoRepoEntities = photoDatabaseEntities.map {
+                    photoRepoDatabaseMapper.upstream(it)
+                }
+
+                // Add Bitmap if exists in Storage
+                photoRepoEntities.forEach {
+                    it.thumbBitmap = photoStorageDao.readPhotoBitmap(it.thumbPath)
+                    it.originalBitmap = photoStorageDao.readPhotoBitmap(it.originalPath)
+                }
+
+                Flowable.fromArray(photoRepoEntities)
+            }
 
     fun retrievePhotos(text: String, page: Long = 1) {
         if (page == 1.toLong()) {
@@ -132,42 +160,83 @@ class PhotosRepository(private val ctx: Context? = null) : ErrorRepository(ctx) 
         photosNetworkDao.retrievePhotos(text, page)
     }
 
-    fun retrievePhotoSizes(photoId: String) {
-        photosNetworkDao.retrievePhotoSize(photoId)
-    }
+    private fun retrievePhotoSizes(photoId: String) {
+        // Check if already exists in the DB
+        photoDatabaseDao.getById(photoId).getValue(
+                onSuccess = { photoDatabaseEntities ->
+                    var shouldRetrieve = true
 
-    fun insertPhotosInfo(photos: List<PhotoRepoEntity>) {
-        photoDatabaseDao.insert(
-                *photos.map {
-                    photoRepoDatabaseMapper.downstream(it)
-                }.toTypedArray()
-        )
-    }
+                    if (photoDatabaseEntities.isNotEmpty()) {
+                        val photoDatabaseEntity = photoDatabaseEntities[0]
 
-    // TODO: to be used when ready for photo sizes
-    fun insertPhotoSizes(photo: PhotoRepoEntity) {
-        photoDatabaseDao.getById(photo.id).getValue(
-                onSuccess = {
-                    var photoDatabaseEntity = photoRepoDatabaseMapper.downstream(photo)
-
-                    if (it.isNotEmpty()) {
-                        photoDatabaseEntity = it[0]
-
-                        if (photo.title.isNotEmpty()) {
-                            photoDatabaseEntity.title = photo.title
-                        }
-
-                        if (photo.imgThumb.isNotEmpty()) {
-                            photoDatabaseEntity.imgThumb = photo.imgThumb
-                        }
-
-                        if (photo.imgOriginal.isNotEmpty()) {
-                            photoDatabaseEntity.imgOriginal = photo.imgOriginal
+                        val (_, _, tUrl, oUrl, tPath, oPath) = photoDatabaseEntity
+                        if (tUrl.isNotEmpty() || oUrl.isNotEmpty() || tPath.isNotEmpty() || oPath.isNotEmpty()) {
+                            shouldRetrieve = false
                         }
                     }
 
-                    photoDatabaseDao.update(photoDatabaseEntity).execute()
+                    // Only retrieve if doesn't exist in DB
+                    if (shouldRetrieve) {
+                        photosNetworkDao.retrievePhotoSize(photoId)
+                    }
                 }
         )
     }
+
+
+    private fun insertPhotoSizes(photo: PhotoRepoEntity) {
+        photoDatabaseDao.getById(photo.id).getValue(
+                onSuccess = {
+                    // Inserting sizes requires the photo info to exist in the DB
+                    if (it.isNotEmpty()) {
+                        val photoDatabaseEntity = it.first()
+
+                        if (photo.thumbUrl.isNotEmpty()) {
+                            photoDatabaseEntity.thumbUrl = photo.thumbUrl
+                        }
+
+                        if (photo.originalUrl.isNotEmpty()) {
+                            photoDatabaseEntity.originalUrl = photo.originalUrl
+                        }
+
+                        photoDatabaseDao.update(photoDatabaseEntity).execute()
+                    }
+                }
+        )
+    }
+
+    // endregion Photos List
+
+    // region Single Photo
+
+    val photoSaved = PublishSubject.create<Boolean>()
+
+    fun savePhoto(photoId: String, thumbBitmap: Bitmap, originalBitmap: Bitmap) {
+        // Save both Thumbnail and Original in Storage
+        val thumbPath = photoStorageDao.saveThumbBitmap(photoId, thumbBitmap)
+        val originalPath = photoStorageDao.saveThumbBitmap(photoId, originalBitmap)
+
+        // Update DB with new Paths
+        photoDatabaseDao.getById(photoId).getValue(
+                onSuccess = {
+                    if (it.isNotEmpty()) {
+                        val photo = it.first()
+
+                        photo.thumbPath = thumbPath
+                        photo.originalPath = originalPath
+
+                        photoDatabaseDao.update(photo).execute(
+                                onSuccess = {
+                                    photoSaved.onNext(true)
+                                }
+                        )
+                    }
+                }
+        )
+    }
+
+    // endregion Single Photo
+
+
+
 }

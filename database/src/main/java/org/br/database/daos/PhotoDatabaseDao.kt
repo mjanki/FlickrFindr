@@ -22,6 +22,6 @@ interface PhotoDatabaseDao {
     @Query("DELETE FROM photos")
     fun deleteAll(): Completable
 
-    @Query("DELETE FROM photos WHERE isSaved = 0")
+    @Query("DELETE FROM photos WHERE originalPath = ''")
     fun deleteNonSaved(): Completable
 }

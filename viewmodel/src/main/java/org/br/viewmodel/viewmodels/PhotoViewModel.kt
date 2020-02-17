@@ -6,40 +6,52 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import io.reactivex.rxkotlin.addTo
 import org.br.repository.repositories.PhotosRepository
-import org.br.viewmodel.mappers.PhotoViewModelRepoMapper
 import org.br.viewmodel.models.PhotoViewModelEntity
 
 class PhotoViewModel(application: Application) : BaseViewModel(application) {
     private lateinit var photosRepository: PhotosRepository
-    private var photo = MutableLiveData<PhotoViewModelEntity>()
 
-    private val photoViewModelRepoMapper = PhotoViewModelRepoMapper()
+    lateinit var photo: PhotoViewModelEntity
 
-    private var photoBitmap = MutableLiveData<Bitmap>()
+    private val photoBitmap = MutableLiveData<Bitmap>()
+    fun getPhotoBitmap(): LiveData<Bitmap> = photoBitmap
 
-    fun init(photoId: String) {
-        init(photoId = photoId, testPhotosRepository = null)
+    private val photoSavedLiveData = MutableLiveData<Boolean>()
+    fun getPhotoSavedLiveData(): LiveData<Boolean> = photoSavedLiveData
+
+    fun init(photo: PhotoViewModelEntity) {
+        init(photo = photo, testPhotosRepository = null)
     }
 
-    fun init(photoId: String, testPhotosRepository: PhotosRepository? = null) {
+    fun init(photo: PhotoViewModelEntity, testPhotosRepository: PhotosRepository? = null) {
         photosRepository = testPhotosRepository ?: PhotosRepository(getApplication())
         photosRepository.init()
 
-        photosRepository.getPhotoById(photoId).subscribe { photoRepoEntityList ->
-            // TODO: Handle empty result
-            if (photoRepoEntityList.isEmpty()) { return@subscribe }
+        this.photo = photo
 
-            val photoRepoEntity = photoRepoEntityList[0]
-            photo.postValue(photoViewModelRepoMapper.upstream(photoRepoEntity))
+        // If photo is saved notify UI
+        photosRepository.photoSaved.subscribe {
+            photoSavedLiveData.postValue(it)
         }.addTo(disposables)
-
-        /*taskRepository.isRetrievingTasks.subscribe {
-            isRetrievingTasks.postValue(it)
-        }.addTo(disposables)*/
     }
 
-    fun getPhoto(): LiveData<PhotoViewModelEntity> = photo
-    fun getPhotoBitmap(): LiveData<Bitmap> = photoBitmap
+    fun postPhoto(bitmap: Bitmap) {
+        photoBitmap.postValue(bitmap)
+    }
+
+    fun savePhoto() {
+        val thumbBitmap = photo.thumbBitmap
+        val originalBitmap = photo.originalBitmap
+
+        // Only save if both Bitmaps are not null
+        if (thumbBitmap != null && originalBitmap != null) {
+            photosRepository.savePhoto(
+                    photo.id,
+                    thumbBitmap,
+                    originalBitmap
+            )
+        }
+    }
 
     override fun onCleared() {
         super.onCleared()
