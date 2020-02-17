@@ -6,6 +6,7 @@ import io.reactivex.Flowable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.PublishSubject
 import org.br.database.daos.PhotoDatabaseDao
+import org.br.database.models.PhotoDatabaseEntity
 import org.br.network.daos.PhotosNetworkDao
 import org.br.repository.mappers.ErrorNetworkRepoNetworkMapper
 import org.br.repository.mappers.PhotoRepoDatabaseMapper
@@ -150,20 +151,34 @@ class PhotosRepository(private val ctx: Context? = null) : ErrorRepository(ctx) 
 
     // region Photos List
 
+    fun getPhotoById(photoId: String): Flowable<List<PhotoRepoEntity>> =
+            photoDatabaseDao.getById(photoId).flatMap { photoDatabaseEntities ->
+                Flowable.fromArray(
+                        preparePhotoDatabaseEntites(photoDatabaseEntities)
+                )
+            }
+
     fun getPhotos(): Flowable<List<PhotoRepoEntity>> =
             photoDatabaseDao.getAll().flatMap { photoDatabaseEntities ->
-                val photoRepoEntities = photoDatabaseEntities.map {
-                    photoRepoDatabaseMapper.upstream(it)
-                }
-
-                // Add Bitmap if exists in Storage
-                photoRepoEntities.forEach {
-                    it.thumbBitmap = photoStorageDao.readPhotoBitmap(it.thumbPath)
-                    it.originalBitmap = photoStorageDao.readPhotoBitmap(it.originalPath)
-                }
-
-                Flowable.fromArray(photoRepoEntities)
+                Flowable.fromArray(
+                        preparePhotoDatabaseEntites(photoDatabaseEntities)
+                )
             }
+
+    // Upstream and update with Bitmaps if exist
+    private fun preparePhotoDatabaseEntites(photoDatabaseEntities: List<PhotoDatabaseEntity>): List<PhotoRepoEntity> {
+        val photoRepoEntities = photoDatabaseEntities.map {
+            photoRepoDatabaseMapper.upstream(it)
+        }
+
+        // Add Bitmap if exists in Storage
+        photoRepoEntities.forEach {
+            it.thumbBitmap = photoStorageDao.readPhotoBitmap(it.thumbPath)
+            it.originalBitmap = photoStorageDao.readPhotoBitmap(it.originalPath)
+        }
+
+        return photoRepoEntities
+    }
 
     fun retrievePhotos(text: String, page: Long = 1) {
         if (page == 1.toLong()) {

@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.bumptech.glide.Glide;
@@ -26,6 +27,7 @@ import org.br.flickrfinder.R;
 import org.br.flickrfinder.mappers.PhotoViewViewModelMapper;
 import org.br.flickrfinder.models.PhotoViewEntity;
 import org.br.util.PermissionUtilsKt;
+import org.br.viewmodel.models.PhotoViewModelEntity;
 import org.br.viewmodel.viewmodels.PhotoViewModel;
 
 import java.util.Objects;
@@ -45,16 +47,16 @@ public class PhotoFragment extends Fragment {
 
         // NOTE: if this fragment is pushed without arguments it'll throw
         // an IllegalArgumentException anyway
-        PhotoViewEntity photo = PhotoFragmentArgs.fromBundle(
+        String photoId = PhotoFragmentArgs.fromBundle(
                 Objects.requireNonNull(getArguments())
-        ).getPhoto();
+        ).getPhotoId();
 
         photoVM = ViewModelProviders.of(this).get(PhotoViewModel.class);
-        photoVM.init(photoViewViewModelMapper.downstream(photo));
+        photoVM.init(photoId);
 
         FragmentActivity activity = getActivity();
         if (activity != null) {
-            activity.setTitle(photo.getTitle());
+            activity.setTitle("Photo");
         }
     }
 
@@ -71,22 +73,54 @@ public class PhotoFragment extends Fragment {
         Button bSave = view.findViewById(R.id.bSave);
         ImageView ivPhoto = view.findViewById(R.id.ivPhoto);
 
-        setupPhotoObservers(ivPhoto);
+        setupPhotoObservers(ivPhoto, bSave);
         setupStatusObservers(bSave);
         setupSaveButton(bSave);
 
         setupView(bSave);
     }
 
-    private void setupPhotoObservers(ImageView ivPhoto) {
+    private void setupPhotoObservers(ImageView ivPhoto, Button bSave) {
+        photoVM.getPhotoLiveData().observe(
+                getViewLifecycleOwner(),
+                photoViewModelEntity -> {
+
+                    PhotoViewEntity photo = photoViewViewModelMapper.upstream(photoViewModelEntity);
+
+                    // If photo is not saved get Bitmap from Url, enable save, and notify VM,
+                    // otherwise just notify VM
+                    if (photo.getOriginalBitmap() == null) {
+                        Glide.with(PhotoFragment.this)
+                                .asBitmap()
+                                .load(photo.getOriginalUrl())
+                                .placeholder(R.drawable.ic_happy)
+                                .into(new CustomTarget<Bitmap>() {
+                                    @Override
+                                    public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                                        bSave.setEnabled(true);
+
+                                        photoVM.postPhoto(resource);
+                                    }
+
+                                    @Override
+                                    public void onLoadCleared(@Nullable Drawable placeholder) {
+                                    }
+                                });
+                    } else {
+                        photoVM.postPhoto(photo.getOriginalBitmap());
+                    }
+                }
+        );
+
         // Observe photo, display and set Original Bitmap (to allow saving)
         photoVM.getPhotoBitmap().observe(
                 getViewLifecycleOwner(),
                 bitmap -> {
                     ivPhoto.setImageBitmap(bitmap);
 
-                    if (photoVM.getPhoto().getOriginalBitmap() == null) {
-                        photoVM.getPhoto().setOriginalBitmap(bitmap);
+                    if (photoVM.getPhotoLiveData().getValue() != null &&
+                            photoVM.getPhotoLiveData().getValue().getOriginalBitmap() == null) {
+                        photoVM.getPhotoLiveData().getValue().setOriginalBitmap(bitmap);
                     }
                 }
         );
@@ -114,35 +148,13 @@ public class PhotoFragment extends Fragment {
     private void setupView(Button bSave) {
         // Disable Save button until image is fetched and checked that it isn't saved already
         bSave.setEnabled(false);
-
-        PhotoViewEntity photo = photoViewViewModelMapper.upstream(photoVM.getPhoto());
-
-        // If photo is not saved get Bitmap from Url, enable save, and notify VM,
-        // otherwise just notify VM
-        if (photo.getOriginalBitmap() == null) {
-            Glide.with(PhotoFragment.this)
-                    .asBitmap()
-                    .load(photo.getOriginalUrl())
-                    .placeholder(R.drawable.ic_happy)
-                    .into(new CustomTarget<Bitmap>() {
-                        @Override
-                        public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                            bSave.setEnabled(true);
-
-                            photoVM.postPhoto(resource);
-                        }
-
-                        @Override
-                        public void onLoadCleared(@Nullable Drawable placeholder) {
-                        }
-                    });
-        } else {
-            photoVM.postPhoto(photo.getOriginalBitmap());
-        }
     }
 
     private void savePhoto() {
-        PhotoViewEntity photo = photoViewViewModelMapper.upstream(photoVM.getPhoto());
+        PhotoViewModelEntity photoViewModelEntity = photoVM.getPhotoLiveData().getValue();
+        if (photoViewModelEntity == null) { return; }
+
+        PhotoViewEntity photo = photoViewViewModelMapper.upstream(photoViewModelEntity);
 
         Glide.with(PhotoFragment.this)
                 .asBitmap()
@@ -150,7 +162,7 @@ public class PhotoFragment extends Fragment {
                 .into(new CustomTarget<Bitmap>() {
                     @Override
                     public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                        photoVM.getPhoto().setThumbBitmap(resource);
+                        photoVM.savePhotoThumbnail(resource);
                         photoVM.savePhoto();
                     }
 

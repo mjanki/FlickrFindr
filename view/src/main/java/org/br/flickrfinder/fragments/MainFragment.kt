@@ -100,7 +100,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         adapter.onClick = {
             if (it.originalUrl.isNotEmpty() || it.originalBitmap != null) {
                 findNavController().navigate(
-                        MainFragmentDirections.actionMainFragmentToPhotoFragment(it)
+                        MainFragmentDirections.actionMainFragmentToPhotoFragment(it.id)
                 )
             } else {
                 showImageMissingSnackbar()

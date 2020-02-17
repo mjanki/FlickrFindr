@@ -18,7 +18,7 @@
         android:name="org.br.flickrfinder.fragments.PhotoFragment"
         tools:layout="@layout/fragment_photo" >
         <argument
-            android:name="photo"
-            app:argType="org.br.flickrfinder.models.PhotoViewEntity" />
+            android:name="photoId"
+            app:argType="string" />
     </fragment>
 </navigation>
