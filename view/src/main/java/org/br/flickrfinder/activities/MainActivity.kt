@@ -27,7 +27,7 @@ class MainActivity : BaseActivity() {
     override fun handleErrorNetwork(errorNetworkViewEntity: ErrorNetworkViewEntity) {
         Snackbar.make(
                 clContainer,
-                "${errorNetworkViewEntity.action} failed with ${errorNetworkViewEntity.code}",
+                "${errorNetworkViewEntity.action} failed!",
                 Snackbar.LENGTH_LONG
         ).addCallback(object : Snackbar.Callback() {
             override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {

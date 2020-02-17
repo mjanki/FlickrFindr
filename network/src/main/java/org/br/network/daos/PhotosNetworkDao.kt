@@ -11,11 +11,12 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 
 class PhotosNetworkDao : BaseNetworkDao() {
     private var requestInterface: FlickrClient = Retrofit.Builder()
-            .baseUrl("https://www.flickr.com")
+            .baseUrl("https://www.flickr55.com")
             .addConverterFactory(MoshiConverterFactory.create().asLenient())
             .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
             .build().create(FlickrClient::class.java)
 
+    // Used for testing
     fun setRequestInterface(flickrClient: FlickrClient) {
         requestInterface = flickrClient
     }

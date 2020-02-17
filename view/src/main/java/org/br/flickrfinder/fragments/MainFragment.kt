@@ -14,6 +14,7 @@ import kotlinx.android.synthetic.main.fragment_main.*
 import org.br.flickrfinder.R
 import org.br.flickrfinder.adapters.PhotosRecyclerViewAdapter
 import org.br.flickrfinder.mappers.PhotoViewViewModelMapper
+import org.br.util.extensions.setVisible
 import org.br.viewmodel.viewmodels.PhotosListViewModel
 
 class MainFragment : Fragment(R.layout.fragment_main) {
@@ -47,8 +48,6 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         photosListVM.getAllPhotos().observe(
                 viewLifecycleOwner,
                 Observer { photos ->
-                    if (photos.isEmpty()) return@Observer
-
                     (rvPhotos.adapter as? PhotosRecyclerViewAdapter)?.let { adapter ->
                         adapter.setPhotosList(
                                 photos.map {
@@ -56,6 +55,22 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                                 }
                         )
                     }
+                }
+        )
+
+        // If loading photos display Progress Dialog
+        photosListVM.getIsRetrievingPhotos().observe(
+                viewLifecycleOwner,
+                Observer {
+                    progressBar.setVisible(it)
+                }
+        )
+
+        // If No Results display Snackbar
+        photosListVM.getNoResults().observe(
+                viewLifecycleOwner,
+                Observer {
+                    if (it) { showNoResultsSnackbar() }
                 }
         )
     }
@@ -88,7 +103,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                         MainFragmentDirections.actionMainFragmentToPhotoFragment(it)
                 )
             } else {
-                showImageMissingToast()
+                showImageMissingSnackbar()
             }
         }
 
@@ -99,7 +114,10 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         rvPhotos.adapter = adapter
     }
 
-    private fun showImageMissingToast() {
-        Snackbar.make(clMainFragment, "Image doesn't exist", Snackbar.LENGTH_SHORT).show()
+    private fun showNoResultsSnackbar() {
+        Snackbar.make(clMainFragment, "No results found!", Snackbar.LENGTH_SHORT).show()
+    }
+    private fun showImageMissingSnackbar() {
+        Snackbar.make(clMainFragment, "Image doesn't exist!", Snackbar.LENGTH_SHORT).show()
     }
 }

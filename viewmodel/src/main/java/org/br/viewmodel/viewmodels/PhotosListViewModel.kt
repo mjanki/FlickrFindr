@@ -37,11 +37,13 @@ class PhotosListViewModel(application: Application) : BaseViewModel(application)
 
         setupPhotosObservers()
         setupSearchTermsObservers()
-
-        /*taskRepository.isRetrievingTasks.subscribe {
-            isRetrievingTasks.postValue(it)
-        }.addTo(disposables)*/
     }
+
+    private val isRetrievingPhotos = MutableLiveData<Boolean>()
+    fun getIsRetrievingPhotos(): LiveData<Boolean> = isRetrievingPhotos
+
+    private val noResults = MutableLiveData<Boolean>()
+    fun getNoResults(): LiveData<Boolean> = noResults
 
     private fun setupPhotosObservers() {
         // Observe Photos and push to UI
@@ -52,6 +54,14 @@ class PhotosListViewModel(application: Application) : BaseViewModel(application)
                     }
             )
         }.addTo(disposables)
+
+        photosRepository.isRetrievingPhotos.subscribe {
+            isRetrievingPhotos.postValue(it)
+        }.addTo(disposables)
+
+        photosRepository.noResults.subscribe {
+            noResults.postValue(it)
+        }.addTo(disposables)
     }
 
     private fun setupSearchTermsObservers() {
@@ -61,10 +71,6 @@ class PhotosListViewModel(application: Application) : BaseViewModel(application)
         }.addTo(disposables)
     }
 
-
-    /*private val isRetrievingTasks = MutableLiveData<Boolean>()
-    fun getIsRetrievingTasks(): LiveData<Boolean> = isRetrievingTasks*/
-
     fun retrievePhotosFirstPage(text: String) {
         currentPage = 1
         currentSearchTerm = text
@@ -73,7 +79,9 @@ class PhotosListViewModel(application: Application) : BaseViewModel(application)
     }
 
     fun retrievePhotosNextPage() {
-        photosRepository.retrievePhotos(currentSearchTerm, (++currentPage))
+        if (currentSearchTerm.isNotEmpty()) {
+            photosRepository.retrievePhotos(currentSearchTerm, (++currentPage))
+        }
     }
 
     override fun onCleared() {

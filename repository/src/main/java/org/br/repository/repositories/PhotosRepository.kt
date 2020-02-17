@@ -50,8 +50,8 @@ class PhotosRepository(private val ctx: Context? = null) : ErrorRepository(ctx) 
         searchTermsRepository.init()
 
         setupErrorNetwork()
-        setupRetrievedPhotosObservers()
-        setupRetrievedPhotoSizesObservers()
+        setupPhotosObservers()
+        setupPhotoSizesObservers()
     }
 
     // region Setup
@@ -66,12 +66,21 @@ class PhotosRepository(private val ctx: Context? = null) : ErrorRepository(ctx) 
         }.addTo(disposables)
     }
 
-    private fun setupRetrievedPhotosObservers() {
+    // Used to notify UI of retrieving photos status
+    lateinit var isRetrievingPhotos: PublishSubject<Boolean>
+    var noResults: PublishSubject<Boolean> = PublishSubject.create()
+
+    private fun setupPhotosObservers() {
         // Observe retrieved photos from the Network and save initial info in the DB, then fetch
         // photo sizes from the Network for each photo
         photosNetworkDao.retrievedPhotos.subscribe { response ->
             response.body()?.let { searchResultNetworkEntity ->
                 searchResultNetworkEntity.photos?.let { photos ->
+                    // If no results found notify VM and exit subscribe
+                    if (photos.photo.isEmpty()) {
+                        noResults.onNext(true)
+                        return@subscribe
+                    }
 
                     // Insert initial info if they don't exist in the DB
                     photoDatabaseDao.insert(
@@ -92,9 +101,11 @@ class PhotosRepository(private val ctx: Context? = null) : ErrorRepository(ctx) 
                 }
             }
         }.addTo(disposables)
+
+        isRetrievingPhotos = photosNetworkDao.isRetrievingPhotos
     }
 
-    private fun setupRetrievedPhotoSizesObservers() {
+    private fun setupPhotoSizesObservers() {
         // Observe photo sizes retrieved from the Network and update DB entries accordingly
         photosNetworkDao.retrievedPhotoSizes.subscribe { response ->
             response.body()?.let { photoSizesResultNetworkEntity ->
