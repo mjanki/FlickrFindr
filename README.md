@@ -11,3 +11,4 @@
 * Code is  modular
 * Java Files are PhotoFragment in the View module and PhotoStorageDao in the Storage module
 * Room, Retrofit, RxJava (RxKotlin), LiveData, DiffUtil were used among other things
+* The Database is the source of truth
